@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multimodal AI Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 600px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background-color: #f8f9fa;
+        }
+
+        .message {
+            display: flex;
+            animation: slideIn 0.3s ease-in-out;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+
+        .message.user .message-bubble {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot .message-bubble {
+            background: #e9ecef;
+            color: #212529;
+            border-bottom-left-radius: 4px;
+        }
+
+        .typing span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #667eea;
+            animation: typing 1.4s infinite;
+            display: inline-block;
+            margin: 0 2px;
+        }
+
+        .typing span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                opacity: 0.5;
+                transform: translateY(0);
+            }
+            30% {
+                opacity: 1;
+                transform: translateY(-10px);
+            }
+        }
+
+        .input-area {
+            background: white;
+            padding: 15px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-form {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .chat-input:disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+        }
+
+        .send-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .image-upload {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-btn {
+            padding: 10px 16px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .upload-btn:hover {
+            background: #218838;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-name {
+            color: #28a745;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .error-banner {
+            background: #fff3cd;
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Multimodal AI Assistant</h1>
+            <p>Chat and upload images</p>
+        </div>
+
+        <div class="messages" id="messages">
+            <div class="message bot">
+                <div class="message-bubble">Hello! I'm your AI Assistant. How can I help you today?</div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div id="error" class="error-banner" style="display: none;"></div>
+            
+            <form class="chat-form" onsubmit="handleSendMessage(event)">
+                <input 
+                    type="text" 
+                    id="chatInput"
+                    class="chat-input" 
+                    placeholder="Type your message here..."
+                    autocomplete="off"
+                />
+                <button class="send-btn" type="submit" id="sendBtn">Send</button>
+            </form>
+
+            <div class="image-upload">
+                <label for="imageInput" class="upload-btn">📸 Upload Image</label>
+                <input 
+                    type="file" 
+                    id="imageInput" 
+                    class="file-input" 
+                    accept="image/*"
+                    onchange="handleImageUpload(event)"
+                />
+                <span class="file-name" id="fileName"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        let messageId = 2;
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function addMessage(type, text) {
+            const messagesDiv = document.getElementById('messages');
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.textContent = text;
+            
+            messageEl.appendChild(bubble);
+            messagesDiv.appendChild(messageEl);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            messageId++;
+        }
+
+        function showTyping() {
+            const messagesDiv = document.getElementById('messages');
+            const messageEl = document.createElement('div');
+            messageEl.className = 'message bot';
+            messageEl.id = 'typing-indicator';
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble typing';
+            bubble.innerHTML = '<span></span><span></span><span></span>';
+            
+            messageEl.appendChild(bubble);
+            messagesDiv.appendChild(messageEl);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function removeTyping() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+        }
+
+        async function handleSendMessage(event) {
+            event.preventDefault();
+            
+            const chatInput = document.getElementById('chatInput');
+            const inputValue = chatInput.value.trim();
+            
+            if (!inputValue) return;
+
+            // Add user message
+            addMessage('user', inputValue);
+            chatInput.value = '';
+            document.getElementById('sendBtn').disabled = true;
+            chatInput.disabled = true;
+
+            showTyping();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: inputValue })
+                });
+
+                removeTyping();
+
+                if (!response.ok) {
+                    throw new Error('Failed to get response');
+                }
+
+                const data = await response.json();
+                addMessage('bot', data.response);
+            } catch (error) {
+                removeTyping();
+                console.error('Error:', error);
+                showError('⚠️ Backend not running. Please start the backend server on http://localhost:8000');
+                addMessage('bot', '❌ Could not connect to backend. Make sure the server is running!');
+            } finally {
+                document.getElementById('sendBtn').disabled = false;
+                chatInput.disabled = false;
+                chatInput.focus();
+            }
+        }
+
+        async function handleImageUpload(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('sendBtn').disabled = true;
+            document.getElementById('chatInput').disabled = true;
+
+            showTyping();
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch(`${API_BASE_URL}/image`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                removeTyping();
+
+                if (!response.ok) {
+                    throw new Error('Failed to upload image');
+                }
+
+                const data = await response.json();
+                addMessage('bot', `✓ ${data.message} - ${data.filename}`);
+                document.getElementById('fileName').textContent = '';
+                document.getElementById('imageInput').value = '';
+            } catch (error) {
+                removeTyping();
+                console.error('Error:', error);
+                showError('⚠️ Backend not running or image upload failed');
+                addMessage('bot', '❌ Image upload failed. Make sure the backend is running!');
+            } finally {
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('chatInput').disabled = false;
+            }
+        }
+
+        // Check backend connection on load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/`);
+                if (response.ok) {
+                    addMessage('bot', '✓ Backend connected successfully!');
+                }
+            } catch (error) {
+                showError('⚠️ Cannot connect to backend on http://localhost:8000');
+            }
+        });
+    </script>
+</body>
+</html>
